@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
+using System.Collections.ObjectModel;
 
 namespace MatrixMultiplicationClient
 {
@@ -21,6 +22,8 @@ namespace MatrixMultiplicationClient
     /// </summary>
     public partial class MainWindow : Window
     {
+        public static ObservableCollection<string> lstDetails;
+
         string path1, path2;
         string path_result;
         string path_config;
@@ -33,10 +36,29 @@ namespace MatrixMultiplicationClient
         public MainWindow()
         {
             InitializeComponent();
+            lstDetails = new ObservableCollection<string>();
+            lstBxDetails.ItemsSource = lstDetails;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            bool conectionSuccess = false;
+            while (!conectionSuccess)
+            {
+                try
+                {
+                    Client.Register(string.IsNullOrEmpty(txtServerIp.Text) ? "localhost" : txtServerIp.Text);
+                    conectionSuccess = true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBoxResult mbr = MessageBox.Show("No se ha podido conectar al servidor. ¿Reintentar?", "Ha ocurrido un problema", MessageBoxButton.YesNo, MessageBoxImage.Hand);
+                    //if (mbr == MessageBoxResult.No)
+                        //return;
+                }
+            }
+
+            Matrix.StartListening();
             path1 = @"C:\CP_P2\Matrix_1.txt";
             path2 = @"C:\CP_P2\Matrix_2.txt";
             path_result = @"C:\CP_P2\Matrix_Result.txt";
@@ -106,22 +128,6 @@ namespace MatrixMultiplicationClient
 
         private void btnParallel_Click(object sender, RoutedEventArgs e)
         {
-            bool conectionSuccess = false;
-            while (!conectionSuccess)
-            {
-                try
-                {
-                    Client.Register(string.IsNullOrEmpty(txtServerIp.Text) ?  "localhost" : txtServerIp.Text );
-                    conectionSuccess = true;
-                }
-                catch (Exception ex)
-                {
-                    MessageBoxResult mbr = MessageBox.Show("No se ha podido conectar al servidor. ¿Reintentar?", "Ha ocurrido un problema", MessageBoxButton.YesNo, MessageBoxImage.Hand);
-                    if (mbr == MessageBoxResult.No)
-                        return;
-                }
-            }
-
             if (File.Exists(path1) && File.Exists(path2))
             {
                 long elapsedTime = Matrix.multiplicationParallel(path1, path2, path_result, rows, columns, separator);

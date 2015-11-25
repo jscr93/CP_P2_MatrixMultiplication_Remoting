@@ -10,16 +10,24 @@ namespace MatrixServerDLL
         private List<string>            clients         = new List<string>();           // Ip of clients
         private List<RowsToMultiply>    sourceMatrices  = new List<RowsToMultiply>();   //
         private List<RowResult>         resultMatrix    = new List<RowResult>();        //
-        public  bool                    executing       = false;
+        private int                     totalRows;
+        private object                  downloadedLock  = new object();
+        private int                     downloaded;
+        public  object                  isWorkingLock   = new object();
+        public  bool                    isWorking       = false;
+        private object                  callingClientsLock = new object();
+        private bool                    callingClients = false;
 
 
-        // Commands
+
         public void AddClient(String name)
         {
             if (name != null)
             {
                 lock (clients)
                 {
+                    if (clients.Exists(c => c == name))
+                        name = name + "A";
                     clients.Add(name);
                 }
             }
@@ -31,6 +39,40 @@ namespace MatrixServerDLL
             {
                 clients.Remove(name);
             }
+        }
+
+        public bool Start()
+        {
+            lock(isWorkingLock)
+            {
+                if (isWorking)
+                    return false;
+                else
+                    isWorking = true;
+                return true;
+            }
+        }
+
+        public bool Finish()
+        {
+            lock(isWorkingLock)
+            {
+                isWorking = false;
+                return true;
+            }
+        }
+
+        public bool WaitForAllClientsToFinishDownload()
+        {
+            if (downloaded == clients.Count)
+                return true;
+            return false;
+        }
+
+        public void downloadedRowGroup()
+        {
+            lock(downloadedLock)
+                downloaded++;
         }
 
         public bool AddSourceRow(RowsToMultiply newSourceRow)
@@ -63,42 +105,90 @@ namespace MatrixServerDLL
             }
         }
 
-        Dictionary<string, List<int>> dispatchedRows;
-        public int DispatchRowGroupsToClients(int rowsNumber)
+        Dictionary<string, RowGroups> assignedRowsGroups;
+        private class RowGroups
         {
-            if (rowsNumber <= 0)
-                return 0;
-            dispatchedRows = new Dictionary<string, List<int>>();
+            public List<int> rowGroups;
+            public int totalRows;
+            public int downloadedRows;
+            public RowGroups()
+            {
+                rowGroups = new List<int>();
+                totalRows = 0;
+                downloadedRows = 0;
+            }
+            public void Add(int row)
+            {
+                rowGroups.Add(row);
+                totalRows++;
+            }
+        }
+        public int[] DispatchRowGroupsToClients(int rowsNumber, string clientSender)
+        {
+            totalRows = rowsNumber;
+            if (totalRows <= 0)
+                return null;
+            assignedRowsGroups = new Dictionary<string, RowGroups>();
             int clientsNumber = clients.Count;
-            int groups = rowsNumber / clientsNumber;
+            int groups = totalRows / clientsNumber;
             int row = 0;
             foreach (string client in clients)
             {
-                List<int> groupForClient = new List<int>();
+                RowGroups groupForClient = new RowGroups();
                 for (int i = 0; i < groups; i++)
                     groupForClient.Add(row++);
-                dispatchedRows.Add(client, groupForClient);
+                assignedRowsGroups.Add(client, groupForClient);
             }
-            while(row <= rowsNumber)
+            while(row < totalRows)
             {
-                dispatchedRows[clients[0]].Add(row++);
+                assignedRowsGroups[clients[0]].Add(row++);
             }
-            int a = 0;
-            return a;
+
+            downloaded = 1; //clientSender has already downloaded its rows
+            lock(callingClientsLock)
+            {
+                callingClients = true;
+            }
+            foreach( int rowIndex in assignedRowsGroups[clientSender].rowGroups)
+            {
+                sourceMatrices[rowIndex].sent = true;
+                assignedRowsGroups[clientSender].downloadedRows++;
+            }
+            return assignedRowsGroups[clientSender].rowGroups.ToArray();
         }
 
-        // Queries
         public List<string> Clients()
         {
             return clients;
         }
 
-        public RowsToMultiply getSourceRows(int rowNumber)
+        public bool CallingClients()
+        {
+            return callingClients;
+        }
+
+        public RowsToMultiply getNextAssignedSourceRow(string clientIP)
+        {
+            List<int> assignedSourceRows = assignedRowsGroups[clientIP].rowGroups;
+            if (assignedSourceRows.Count == 0)
+                return null;
+            int nextAssignedSourceRow = assignedSourceRows[0];
+            assignedSourceRows.RemoveAt(0);
+            return getSourceRow(nextAssignedSourceRow);
+        }
+
+        public void rowDownloadSuccess(string clientIP)
+        {
+            //assignedRowsGroups[clients.Where(c => c == clientIP).First()].downloadedRow++;
+            assignedRowsGroups[clientIP].downloadedRows++;
+        }
+
+        private RowsToMultiply getSourceRow(int rowNumber)
         {
             return sourceMatrices.Where(m => m.rowNumber == rowNumber).First();
         }
 
-        public ArrayList getMultipleSourceRows(int[] rowNumbers)
+        private ArrayList getMultipleSourceRows(int[] rowNumbers)
         {
             ArrayList sourceRows = new ArrayList();
             foreach (int i in rowNumbers)
@@ -112,6 +202,16 @@ namespace MatrixServerDLL
         public int getClientsNumber()
         {
             return clients.Count;
+        }
+
+        public ArrayList getDetails()
+        {
+            ArrayList details = new ArrayList();
+            foreach (string client in clients)
+            {
+                details.Add(string.Format("{0} {1}/{2}",client, assignedRowsGroups[client].downloadedRows, assignedRowsGroups[client].totalRows));
+            }
+            return details;
         }
     }
 
@@ -137,11 +237,12 @@ namespace MatrixServerDLL
     {
         public int      rowNumber   { get; private set; }
         public string   rowResult   { get; private set; }
-
+        public bool     sentToRequesterClient { get; private set; }
         public RowResult(int rowNumber, string rowResult)
         {
             this.rowNumber = rowNumber;
             this.rowResult = rowResult;
+            this.sentToRequesterClient = false;
         }
     }
 }

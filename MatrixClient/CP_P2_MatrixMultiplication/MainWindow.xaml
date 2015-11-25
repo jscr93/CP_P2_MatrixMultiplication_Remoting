@@ -6,9 +6,10 @@
         xmlns:local="clr-namespace:CP_P2_MatrixMultiplication"
         mc:Ignorable="d"
         Loaded="Window_Loaded"
-        Title="Multiplicacion de Matrices" Height="350" Width="600">
+        Title="Multiplicacion de Matrices" Height="450" Width="600">
     <Grid >
         <Grid.RowDefinitions>
+            <RowDefinition Height="2*"/>
             <RowDefinition Height="2*"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -44,7 +45,9 @@
             <TextBox x:Name="txtSeedM2" Grid.Row="5" Grid.Column="3" Text="3"/>
         </Grid>
         
-        <Grid Grid.Row="1">
+        <ListBox x:Name="lstBxDetails" Grid.Row="1" ItemsSource="{Binding}" HorizontalAlignment="Stretch" Margin="6"/>
+        
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
