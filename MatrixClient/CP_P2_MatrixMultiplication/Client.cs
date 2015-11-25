@@ -13,7 +13,7 @@ namespace MatrixMultiplicationClient
 {
     class Client
     {
-        public static MatrixServer server = new MatrixServer();
+        public static MatrixServer server;
         public static string clientIP = GetLocalIPAddress();
 
         private static HttpChannel channel = null;
@@ -22,10 +22,12 @@ namespace MatrixMultiplicationClient
             if (channel == null)
             {
                 channel = new HttpChannel();
-                ChannelServices.RegisterChannel(channel, false);
+                ChannelServices.RegisterChannel(channel);
             }
             RemotingConfiguration.RegisterWellKnownClientType(
-                typeof(MatrixServer), "http://" + serverIP + ":12345/ChatServer");
+                typeof(MatrixServer), "http://" + serverIP + ":12345/MatrixServer");
+            //typeof(MatrixServer), "http://" + serverIP + ":12345/ChatServer");
+            server = new MatrixServer();
             server.AddClient(clientIP);
         }
 

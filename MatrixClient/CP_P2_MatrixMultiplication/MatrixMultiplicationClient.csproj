@@ -35,7 +35,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MatrixServerDLL">
+    <Reference Include="MatrixServerDLL, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\MatrixServer\MatrixServerDLL\bin\Debug\MatrixServerDLL.dll</HintPath>
     </Reference>
     <Reference Include="System" />

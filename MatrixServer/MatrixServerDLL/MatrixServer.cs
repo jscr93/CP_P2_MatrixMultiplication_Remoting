@@ -215,7 +215,8 @@ namespace MatrixServerDLL
         }
     }
 
-    public class RowsToMultiply
+    [Serializable]
+    public class RowsToMultiply 
     {
         public int      rowNumber       { get; private set; }
         public string   row_Matrix1     { get; private set; }
@@ -233,6 +234,7 @@ namespace MatrixServerDLL
         }
     }
 
+    [Serializable]
     public class RowResult
     {
         public int      rowNumber   { get; private set; }

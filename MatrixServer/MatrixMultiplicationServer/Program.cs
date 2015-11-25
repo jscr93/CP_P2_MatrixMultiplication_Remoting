@@ -16,7 +16,7 @@ namespace MatrixMultiplicationServer
         {
             // Create and register the channel
             HttpChannel channel = new HttpChannel(12345);
-            ChannelServices.RegisterChannel(channel, false);
+            ChannelServices.RegisterChannel(channel);
             Console.WriteLine("Starting MatrixServer");
 
             // Register the ChatServer for remoting
