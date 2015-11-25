@@ -35,9 +35,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ChatServerDLL">
-      <HintPath>..\..\MatrixServer\MatrixServerDLL\bin\Debug\ChatServerDLL.dll</HintPath>
-    </Reference>
     <Reference Include="MatrixServerDLL">
       <HintPath>..\..\MatrixServer\MatrixServerDLL\bin\Debug\MatrixServerDLL.dll</HintPath>
     </Reference>

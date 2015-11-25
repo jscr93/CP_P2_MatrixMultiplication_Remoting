@@ -13,11 +13,10 @@ namespace MatrixMultiplicationClient
 {
     class Matrix
     {
-        private ArrayList matrix1 = new ArrayList(); // Holds text for matrix
-        private ArrayList matrix2 = new ArrayList(); // Holds text for matrix
-        private ArrayList matrixResults = new ArrayList(); // Holds text for matrix
+        private List<string> matrix1 = new List<string>(); // Holds text for matrix
+        private List<string> matrix2 = new List<string>(); // Holds text for matrix
+        private List<string> matrixResults = new List<string>(); // Holds text for matrix
         private static Thread parallelThread;
-        public static MatrixServer server = new MatrixServer();
 
         public static void createMatrixFile(string path, long rows, long columns, char separator, int randomSeed)
         {
@@ -55,7 +54,7 @@ namespace MatrixMultiplicationClient
 
 
         
-        public static long multiplicationParallel(string Path1, string Path2, string Path_result, long Rows_m1, long Columns_m1, char Separator)
+        public static long multiplicationParallel(string Path1, string Path2, string Path_result, int Rows_m1, int Columns_m1, char Separator)
         {
             ParameterizedThreadStart pts = new ParameterizedThreadStart(Matrix.executeParallel);
             parallelThread = new Thread(pts);
@@ -82,9 +81,17 @@ namespace MatrixMultiplicationClient
             //Upload matrix to server
             for (int i = 0; i < p.rows_m1; i++)
             {
-                server.AddSourceRow(new RowsToMultiply(i, matrix1[i], matrix2[i]));
+                Client.server.AddSourceRow(new RowsToMultiply(i, matrix1[i], matrix2[i]));
             }
 
+            //int rowGroups = p.rows_m1 / Client.server.getClientsNumber();
+
+            Client.server.AddClient("Cliente2");
+            Client.server.AddClient("Cliente3");
+            Client.server.AddClient("Cliente4");
+
+            int a = Client.server.DispatchRowGroupsToClients(p.rows_m1);
+            int b = 0;
             //MatrixResult = new List<RowResult>();
             //Task[] mTasks = new Task[p.rows_m1];
             //for( int i = 0; i < p.rows_m1; i++)
@@ -93,7 +100,7 @@ namespace MatrixMultiplicationClient
             //    mTasks[a] = new Task(() => executeRowMultiplication(matrix1, matrix2, p.rows_m1, p.columns_m1, p.separator, a));
             //}
 
-            foreach (Task t in mTasks)
+            /*foreach (Task t in mTasks)
                 t.Start();
 
             Task.WaitAll(mTasks);
@@ -106,41 +113,41 @@ namespace MatrixMultiplicationClient
                 {
                     sw.WriteLine(sortedMatrix[i].row);
                 }
-            }
+            }*/
             //stopwatch.Stop();
             //return stopwatch.ElapsedMilliseconds;
         }
 
-        private static void executeRowMultiplication(ArrayList matrix1, ArrayList matrix2, long rows_m1, long columns_m1, char separator, int rowIndex_m1)
-        {
-            RowResult rowResult = new RowResult();
-            //string matrix1_row = File.ReadLines(path1).Skip(rowIndex_m1).Take(1).First();
-            string matrix1_row = (string)matrix1[rowIndex_m1];
-            var m1_rowElements = matrix1_row.Split(separator).Select(Int32.Parse).ToArray();
-            StringBuilder sbRowResult = new StringBuilder();
-            //using (StreamReader sr2 = File.OpenText(path2))
-            {
-                for (int i_m2 = 0; i_m2 < rows_m1; i_m2++)
-                {
-                    //string matrix2_row = sr2.ReadLine();
-                    string matrix2_row = (string)matrix2[i_m2];
-                    var m2_rowElements = matrix2_row.Split(separator).Select(Int32.Parse).ToArray();
-                    int mr_element = 0;
-                    for (int j = 0; j < columns_m1; j++)
-                    {
-                        mr_element += m1_rowElements[j] * m2_rowElements[j];
-                    }
-                    sbRowResult.Append(mr_element);
-                    sbRowResult.Append(separator);
-                }
-            }
-            sbRowResult.Length -= 1;
-            rowResult.row = sbRowResult.ToString();
-            rowResult.rowNumber = rowIndex_m1;
-            lock (syncLock) {
-                MatrixResult.Add(rowResult);
-            } 
-        }
+        //private static void executeRowMultiplication(ArrayList matrix1, ArrayList matrix2, int rows_m1, int columns_m1, char separator, int rowIndex_m1)
+        //{
+        //    RowResult rowResult = new RowResult();
+        //    //string matrix1_row = File.ReadLines(path1).Skip(rowIndex_m1).Take(1).First();
+        //    string matrix1_row = (string)matrix1[rowIndex_m1];
+        //    var m1_rowElements = matrix1_row.Split(separator).Select(Int32.Parse).ToArray();
+        //    StringBuilder sbRowResult = new StringBuilder();
+        //    //using (StreamReader sr2 = File.OpenText(path2))
+        //    {
+        //        for (int i_m2 = 0; i_m2 < rows_m1; i_m2++)
+        //        {
+        //            //string matrix2_row = sr2.ReadLine();
+        //            string matrix2_row = (string)matrix2[i_m2];
+        //            var m2_rowElements = matrix2_row.Split(separator).Select(Int32.Parse).ToArray();
+        //            int mr_element = 0;
+        //            for (int j = 0; j < columns_m1; j++)
+        //            {
+        //                mr_element += m1_rowElements[j] * m2_rowElements[j];
+        //            }
+        //            sbRowResult.Append(mr_element);
+        //            sbRowResult.Append(separator);
+        //        }
+        //    }
+        //    sbRowResult.Length -= 1;
+        //    rowResult.row = sbRowResult.ToString();
+        //    rowResult.rowNumber = rowIndex_m1;
+        //    lock (syncLock) {
+        //        MatrixResult.Add(rowResult);
+        //    } 
+        //}
 
         private static List<string> loadMatrix(string path_source)
         {

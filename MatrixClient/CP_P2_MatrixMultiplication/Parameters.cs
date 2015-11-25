@@ -11,8 +11,8 @@ namespace MatrixMultiplicationClient
         public string   path1            { get; set; }
         public string   path2            { get; set; }
         public string   path_result      { get; set; }
-        public long     rows_m1          { get; set; }
-        public long     columns_m1       { get; set; }
+        public int      rows_m1          { get; set; }
+        public int      columns_m1       { get; set; }
         public char     separator        { get; set; }
     }
 }

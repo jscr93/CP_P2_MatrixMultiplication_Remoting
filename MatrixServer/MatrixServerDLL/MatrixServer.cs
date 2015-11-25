@@ -12,6 +12,7 @@ namespace MatrixServerDLL
         private List<RowResult>         resultMatrix    = new List<RowResult>();        //
         public  bool                    executing       = false;
 
+
         // Commands
         public void AddClient(String name)
         {
@@ -62,6 +63,30 @@ namespace MatrixServerDLL
             }
         }
 
+        Dictionary<string, List<int>> dispatchedRows;
+        public int DispatchRowGroupsToClients(int rowsNumber)
+        {
+            if (rowsNumber <= 0)
+                return 0;
+            dispatchedRows = new Dictionary<string, List<int>>();
+            int clientsNumber = clients.Count;
+            int groups = rowsNumber / clientsNumber;
+            int row = 0;
+            foreach (string client in clients)
+            {
+                List<int> groupForClient = new List<int>();
+                for (int i = 0; i < groups; i++)
+                    groupForClient.Add(row++);
+                dispatchedRows.Add(client, groupForClient);
+            }
+            while(row <= rowsNumber)
+            {
+                dispatchedRows[clients[0]].Add(row++);
+            }
+            int a = 0;
+            return a;
+        }
+
         // Queries
         public List<string> Clients()
         {
@@ -82,6 +107,11 @@ namespace MatrixServerDLL
                 sourceRows.Add(sourceMatrices.Where(m => m.rowNumber == rowNumbers[aux_i]).First());
             }
             return sourceRows;
+        }
+
+        public int getClientsNumber()
+        {
+            return clients.Count;
         }
     }
 

@@ -111,7 +111,8 @@ namespace MatrixMultiplicationClient
             {
                 try
                 {
-                    Client.Register(string.IsNullOrEmpty(txtServerIp.Text) ? txtServerIp.Text : "localhost");
+                    Client.Register(string.IsNullOrEmpty(txtServerIp.Text) ?  "localhost" : txtServerIp.Text );
+                    conectionSuccess = true;
                 }
                 catch (Exception ex)
                 {
