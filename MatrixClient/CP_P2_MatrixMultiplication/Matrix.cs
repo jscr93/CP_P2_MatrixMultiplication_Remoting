@@ -60,19 +60,30 @@ namespace MatrixMultiplicationClient
                 if (Client.server.CallingClients())
                 {
                     executeAssignedMultiplications();
+                    break;
                 }
             }
         }
         public static void executeAssignedMultiplications()
         {
-            List<RowsToMultiply> assignedRows = new List<RowsToMultiply>();
+            List<RowsToMultiply> assignedRows_m1 = new List<RowsToMultiply>();
+            List<RowsToMultiply> rows_m2 = new List<RowsToMultiply>();
+            for(int i = 0;true; i++)
+            {
+                RowsToMultiply nextAssignedRow = Client.server.getSourceRow_m2(i);
+                if (nextAssignedRow == null)
+                    break;
+                Client.server.downloadedRow_m2(Client.clientName);
+                rows_m2.Add(nextAssignedRow);
+            }
+
             for (;;)
             {
                 RowsToMultiply nextAssignedRow = Client.server.getNextAssignedSourceRow(Client.clientName);
                 if (nextAssignedRow == null)
                     break;
                 Client.server.rowDownloadSuccess(Client.clientName);
-                assignedRows.Add(nextAssignedRow);
+                assignedRows_m1.Add(nextAssignedRow);
             }
             Client.server.downloadedRowGroup();
             for (;;)
@@ -82,19 +93,19 @@ namespace MatrixMultiplicationClient
                     break;
             }
 
-            object objLockList = new object();
-            Parallel.ForEach<RowsToMultiply>(assignedRows, (rowsToMultiply) => {
-                var m1_rowElements = rowsToMultiply.row_Matrix1.Split(',').Select(Int32.Parse).ToArray(); 
-                var m2_rowElements = rowsToMultiply.row_Matrix2.Split(',').Select(Int32.Parse).ToArray();
-                StringBuilder sbRowResult = new StringBuilder();
-                int mr_element = 0;
-                for (int j = 0; j < m1_rowElements.Length; j++)
-                {
-                    mr_element += m1_rowElements[j] * m2_rowElements[j];
-                }
-                sbRowResult.Append(mr_element);
-                sbRowResult.Append(",");
-            });
+            //object objLockList = new object();
+            //Parallel.ForEach<RowsToMultiply>(assignedRows, (rowsToMultiply) => {
+            //    var m1_rowElements = rowsToMultiply.row_Matrix.Split(',').Select(Int32.Parse).ToArray(); 
+            //    //var m2_rowElements = rowsToMultiply.row_Matrix.Split(',').Select(Int32.Parse).ToArray();
+            //    StringBuilder sbRowResult = new StringBuilder();
+            //    int mr_element = 0;
+            //    for (int j = 0; j < m1_rowElements.Length; j++)
+            //    {
+            //        //mr_element += m1_rowElements[j] * m2_rowElements[j];
+            //    }
+            //    sbRowResult.Append(mr_element);
+            //    sbRowResult.Append(",");
+            //});
         }
 
 
@@ -129,7 +140,12 @@ namespace MatrixMultiplicationClient
             //Upload matrix to server
             for (int i = 0; i < p.rows_m1; i++)
             {
-                Client.server.AddSourceRow(new RowsToMultiply(i, matrix1[i], matrix2[i]));
+                Client.server.AddSourceRow_m1(new RowsToMultiply(i, matrix1[i]));
+            }
+
+            for (int i = 0; i < p.rows_m1; i++)
+            {
+                Client.server.AddSourceRow_m2(new RowsToMultiply(i, matrix2[i]));
             }
 
             int[] clientRows = Client.server.DispatchRowGroupsToClients(p.rows_m1, Client.clientName);

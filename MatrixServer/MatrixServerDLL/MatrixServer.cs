@@ -8,7 +8,8 @@ namespace MatrixServerDLL
     public class MatrixServer : MarshalByRefObject
     {
         private List<string>            clients         = new List<string>();           // Ip of clients
-        private List<RowsToMultiply>    sourceMatrices  = new List<RowsToMultiply>();   //
+        private List<RowsToMultiply>    sourceMatrix_1  = new List<RowsToMultiply>();   //
+        private List<RowsToMultiply>    sourceMatrix_2  = new List<RowsToMultiply>();   //
         private List<RowResult>         resultMatrix    = new List<RowResult>();        //
         private int                     totalRows;
         private object                  downloadedLock  = new object();
@@ -17,7 +18,7 @@ namespace MatrixServerDLL
         public  bool                    isWorking       = false;
         private object                  callingClientsLock = new object();
         private bool                    callingClients = false;
-
+        private Dictionary<string, int> downloadedRows_m2 = new Dictionary<string, int>();
 
 
         public void AddClient(String name)
@@ -26,9 +27,8 @@ namespace MatrixServerDLL
             {
                 lock (clients)
                 {
-                    if (clients.Exists(c => c == name))
-                        name = name;
                     clients.Add(name);
+                    downloadedRows_m2.Add(name,0);
                 }
             }
         }
@@ -38,6 +38,7 @@ namespace MatrixServerDLL
             lock (clients)
             {
                 clients.Remove(name);
+                downloadedRows_m2.Remove(name);
             }
         }
 
@@ -75,13 +76,29 @@ namespace MatrixServerDLL
                 downloaded++;
         }
 
-        public bool AddSourceRow(RowsToMultiply newSourceRow)
+        public void downloadedRow_m2(string name)
+        {
+            downloadedRows_m2[name]++;
+        }
+
+        public bool AddSourceRow_m1(RowsToMultiply newSourceRow)
         {
             if (newSourceRow == null)
                 return false;
-            lock (sourceMatrices)
+            lock (sourceMatrix_1)
             {
-                sourceMatrices.Add(newSourceRow);
+                sourceMatrix_1.Add(newSourceRow);
+            }
+            return true;
+        }
+
+        public bool AddSourceRow_m2(RowsToMultiply newSourceRow)
+        {
+            if (newSourceRow == null)
+                return false;
+            lock (sourceMatrix_2)
+            {
+                sourceMatrix_2.Add(newSourceRow);
             }
             return true;
         }
@@ -92,9 +109,9 @@ namespace MatrixServerDLL
             {
                 lock(resultMatrix)
                 {
-                    lock(sourceMatrices[rowResultToAdd.rowNumber])
+                    lock(sourceMatrix_1[rowResultToAdd.rowNumber])
                     {
-                        RowsToMultiply sourceRow = sourceMatrices[rowResultToAdd.rowNumber];
+                        RowsToMultiply sourceRow = sourceMatrix_1[rowResultToAdd.rowNumber];
                         if (!sourceRow.received)
                         {
                             sourceRow.received = true;
@@ -145,13 +162,14 @@ namespace MatrixServerDLL
             }
 
             downloaded = 1; //clientSender has already downloaded its rows
+            downloadedRows_m2[clientSender] = totalRows;
             lock(callingClientsLock)
             {
                 callingClients = true;
             }
             foreach( int rowIndex in assignedRowsGroups[clientSender].rowGroups)
             {
-                sourceMatrices[rowIndex].sent = true;
+                sourceMatrix_1[rowIndex].sent = true;
                 assignedRowsGroups[clientSender].downloadedRows++;
             }
             return assignedRowsGroups[clientSender].rowGroups.ToArray();
@@ -174,7 +192,7 @@ namespace MatrixServerDLL
                 return null;
             int nextAssignedSourceRow = assignedSourceRows[0];
             assignedSourceRows.RemoveAt(0);
-            return getSourceRow(nextAssignedSourceRow);
+            return getSourceRow_m1(nextAssignedSourceRow);
         }
 
         public void rowDownloadSuccess(string clientIP)
@@ -183,18 +201,25 @@ namespace MatrixServerDLL
             assignedRowsGroups[clientIP].downloadedRows++;
         }
 
-        private RowsToMultiply getSourceRow(int rowNumber)
+        private RowsToMultiply getSourceRow_m1(int rowNumber)
         {
-            return sourceMatrices.Where(m => m.rowNumber == rowNumber).First();
+            return sourceMatrix_1.Where(m => m.rowNumber == rowNumber).First();
         }
 
-        private ArrayList getMultipleSourceRows(int[] rowNumbers)
+        public RowsToMultiply getSourceRow_m2(int rowNumber)
+        {
+            if (rowNumber < totalRows)
+                return sourceMatrix_1.Where(m => m.rowNumber == rowNumber).First();
+            return null;
+        }
+
+        private ArrayList getMultipleSourceRows_m1(int[] rowNumbers)
         {
             ArrayList sourceRows = new ArrayList();
             foreach (int i in rowNumbers)
             {
                 int aux_i = i;
-                sourceRows.Add(sourceMatrices.Where(m => m.rowNumber == rowNumbers[aux_i]).First());
+                sourceRows.Add(sourceMatrix_1.Where(m => m.rowNumber == rowNumbers[aux_i]).First());
             }
             return sourceRows;
         }
@@ -216,7 +241,10 @@ namespace MatrixServerDLL
             ArrayList details = new ArrayList();
             foreach (string client in clients)
             {
-                details.Add(string.Format("{0} {1}/{2}",client, assignedRowsGroups[client].downloadedRows, assignedRowsGroups[client].totalRows));
+                details.Add(string.Format("Cliente {0} decargando: Fila Matriz 1 num. {1}/{2} - Fila Matriz 2 num. {3}/{4}",
+                    client, 
+                    assignedRowsGroups[client].downloadedRows, assignedRowsGroups[client].totalRows,
+                    downloadedRows_m2[client], totalRows));
             }
             return details;
         }
@@ -226,16 +254,14 @@ namespace MatrixServerDLL
     public class RowsToMultiply 
     {
         public int      rowNumber       { get; private set; }
-        public string   row_Matrix1     { get; private set; }
-        public string   row_Matrix2     { get; private set; }
+        public string   row_Matrix     { get; private set; }
         public bool     sent            { get; set; }
         public bool     received        { get; set; }
 
-        public RowsToMultiply(int rowNumber, string row_Matrix1, string row_Matrix2)
+        public RowsToMultiply(int rowNumber, string row_Matrix)
         {
             this.rowNumber = rowNumber;
-            this.row_Matrix1 = row_Matrix1;
-            this.row_Matrix2 = row_Matrix2;
+            this.row_Matrix = row_Matrix;
             sent = false;
             received = false;
         }
