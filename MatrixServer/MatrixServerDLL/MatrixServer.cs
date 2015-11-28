@@ -27,7 +27,7 @@ namespace MatrixServerDLL
                 lock (clients)
                 {
                     if (clients.Exists(c => c == name))
-                        name = name + "A";
+                        name = name;
                     clients.Add(name);
                 }
             }
@@ -202,6 +202,13 @@ namespace MatrixServerDLL
         public int getClientsNumber()
         {
             return clients.Count;
+        }
+
+        public bool isNameAlready(string name)
+        {
+            if (clients.Exists(c => c == name))
+                return true;
+            return false;
         }
 
         public ArrayList getDetails()

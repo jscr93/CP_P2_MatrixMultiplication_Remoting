@@ -15,6 +15,7 @@ namespace MatrixMultiplicationClient
     {
         public static MatrixServer server;
         public static string clientIP = GetLocalIPAddress();
+        public static string clientName;
 
         private static HttpChannel channel = null;
         public static void Register(string serverIP)
@@ -28,7 +29,16 @@ namespace MatrixMultiplicationClient
                 typeof(MatrixServer), "http://" + serverIP + ":12345/MatrixServer");
             //typeof(MatrixServer), "http://" + serverIP + ":12345/ChatServer");
             server = new MatrixServer();
-            server.AddClient(clientIP);
+            server.AddClient(GetNewName());
+        }
+
+        public static string GetNewName()
+        {
+            string name = GetLocalIPAddress();
+            while (server.isNameAlready(name))
+                name += "A";
+            clientName = name;
+            return name;
         }
 
         public static string GetLocalIPAddress()
