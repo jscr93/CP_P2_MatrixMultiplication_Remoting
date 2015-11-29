@@ -136,6 +136,7 @@ namespace MatrixMultiplicationClient
 
             if (!Client.server.Start())
                 return;
+            Client.server.setTotalRows(p.rows_m1);
             startUpdateGUI();
             listeningCallingClientsThread.Abort();
             //Upload matrix to server
