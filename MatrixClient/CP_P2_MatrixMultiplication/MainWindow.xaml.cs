@@ -42,7 +42,7 @@ namespace MatrixMultiplicationClient
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            connectToServer();
+            //connectToServer();
 
 
             path1 = @"C:\CP_P2\Matrix_1.txt";

@@ -26,7 +26,7 @@ namespace MatrixMultiplicationClient
                 ChannelServices.RegisterChannel(channel);
                 RemotingConfiguration.RegisterWellKnownClientType(
                 typeof(MatrixServer), "http://" + serverIP + ":12345/MatrixServer");
-                //typeof(MatrixServer), "http://" + "192.168.100.3"        + ":12345/MatrixServer");
+                //typeof(MatrixServer), "http://" + "192.168.100.8" + ":12345/MatrixServer");
             }
             
             //typeof(MatrixServer), "http://" + serverIP + ":12345/ChatServer");
