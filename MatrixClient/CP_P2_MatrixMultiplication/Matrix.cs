@@ -150,7 +150,7 @@ namespace MatrixMultiplicationClient
                 Client.server.AddSourceRow_m2(new RowsToMultiply(i, matrix2[i]));
             }
 
-            int[] clientRows = Client.server.DispatchRowGroupsToClients(p.rows_m1, Client.clientName);
+            int[] clientRows = Client.server.DispatchRowGroupsToClients(Client.clientName);
             //Esto ya esta, solo lo comento para probarlo
             //if(clientRows != null)
             //{

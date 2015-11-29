@@ -250,13 +250,15 @@ namespace MatrixServerDLL
             ArrayList details = new ArrayList();
             details.Add(string.Format("Cargando matriz 1 a servidor {0}/{1}",uploading_m1, totalRows));
             details.Add(string.Format("Cargando matriz 2 a servidor {0}/{1}",uploading_m2, totalRows));
-            /*foreach (string client in clients)
+            if (uploading_m2 != totalRows)
+                return details;
+            foreach (string client in clients)
             {
                 details.Add(string.Format("Cliente {0} decargando: Fila Matriz 1 num. {1}/{2} - Fila Matriz 2 num. {3}/{4}",
                     client, 
                     assignedRowsGroups[client].downloadedRows, assignedRowsGroups[client].totalRows,
                     downloadedRows_m2[client], totalRows));
-            }*/
+            }
             return details;
         }
     }
