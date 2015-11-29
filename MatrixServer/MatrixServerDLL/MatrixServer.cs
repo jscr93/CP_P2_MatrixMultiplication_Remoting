@@ -19,8 +19,11 @@ namespace MatrixServerDLL
         private object                  callingClientsLock = new object();
         private bool                    callingClients = false;
         private Dictionary<string, int> downloadedRows_m2 = new Dictionary<string, int>();
+        private Dictionary<string, int> uploadedResultRows = new Dictionary<string, int>();
         private int                     uploading_m1    = 0;
         private int                     uploading_m2    = 0;
+        private int                     rowResultDownloaded = 0;
+        private string                  clientSender;
 
         public void AddClient(String name)
         {
@@ -30,6 +33,7 @@ namespace MatrixServerDLL
                 {
                     clients.Add(name);
                     downloadedRows_m2.Add(name,0);
+                    uploadedResultRows.Add(name, 0);
                 }
             }
         }
@@ -40,6 +44,7 @@ namespace MatrixServerDLL
             {
                 clients.Remove(name);
                 downloadedRows_m2.Remove(name);
+                uploadedResultRows.Remove(name);
             }
         }
 
@@ -106,7 +111,7 @@ namespace MatrixServerDLL
             return true;
         }
 
-        public void AddResultRow(RowResult rowResultToAdd)
+        public void AddResultRow(RowResult rowResultToAdd, string client)
         {
             if (rowResultToAdd != null)
             {
@@ -119,10 +124,37 @@ namespace MatrixServerDLL
                         {
                             sourceRow.received = true;
                             resultMatrix.Add(rowResultToAdd);
+                            uploadedResultRows[client]++;
                         }
                     }
                 }
             }
+        }
+
+        object lockCompletedResultRowInSender = new object();
+        public void CompletedResultRowInSender(string clientSender)
+        {
+            lock(lockCompletedResultRowInSender)
+            {
+                uploadedResultRows[clientSender]++;
+            }
+        }
+
+        public RowResult downloadNextResultRow()
+        {
+            if (resultMatrix.Count == 0)
+                return null;
+            RowResult rowResult = resultMatrix[0];
+            resultMatrix.RemoveAt(0);
+            rowResultDownloaded++;
+            return rowResult;
+        }
+
+        public bool isResultMatrixComplete(string clientSender)
+        {
+            if ((resultMatrix.Count + uploadedResultRows[clientSender]) == totalRows)
+                return true;
+            return false;
         }
 
         Dictionary<string, RowGroups> assignedRowsGroups;
@@ -151,6 +183,7 @@ namespace MatrixServerDLL
 
         public int[] DispatchRowGroupsToClients(string clientSender)
         {
+            this.clientSender = clientSender;
             //totalRows = rowsNumber;
             if (totalRows <= 0)
                 return null;
@@ -254,10 +287,16 @@ namespace MatrixServerDLL
                 return details;
             foreach (string client in clients)
             {
-                details.Add(string.Format("Cliente {0} decargando: Fila Matriz 1 num. {1}/{2} - Fila Matriz 2 num. {3}/{4}",
+                details.Add(string.Format("Cliente {0} decargando: Matriz 1 {1}/{2} - Matriz 2 {3}/{4}. cargando: Matriz Resultante {5}/{6}.",
                     client, 
                     assignedRowsGroups[client].downloadedRows, assignedRowsGroups[client].totalRows,
-                    downloadedRows_m2[client], totalRows));
+                    downloadedRows_m2[client], totalRows,
+                    uploadedResultRows[client], assignedRowsGroups[client].totalRows));
+            }
+            if(rowResultDownloaded > 0)
+            {
+                details.Add(string.Format("Matriz Completa. Descargando Matriz {0}/{0}", 
+                    rowResultDownloaded + assignedRowsGroups[clientSender].downloadedRows, totalRows));
             }
             return details;
         }

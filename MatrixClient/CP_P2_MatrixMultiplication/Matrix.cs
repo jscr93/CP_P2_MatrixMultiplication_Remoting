@@ -93,19 +93,28 @@ namespace MatrixMultiplicationClient
                     break;
             }
 
-            //object objLockList = new object();
-            //Parallel.ForEach<RowsToMultiply>(assignedRows, (rowsToMultiply) => {
-            //    var m1_rowElements = rowsToMultiply.row_Matrix.Split(',').Select(Int32.Parse).ToArray(); 
-            //    //var m2_rowElements = rowsToMultiply.row_Matrix.Split(',').Select(Int32.Parse).ToArray();
-            //    StringBuilder sbRowResult = new StringBuilder();
-            //    int mr_element = 0;
-            //    for (int j = 0; j < m1_rowElements.Length; j++)
-            //    {
-            //        //mr_element += m1_rowElements[j] * m2_rowElements[j];
-            //    }
-            //    sbRowResult.Append(mr_element);
-            //    sbRowResult.Append(",");
-            //});
+
+
+            object objLockList = new object();
+            Parallel.ForEach<RowsToMultiply>(assignedRows_m1, (rowToMultiply) =>
+            {
+                var m1_rowElements = rowToMultiply.row_Matrix.Split(',').Select(Int32.Parse).ToArray();
+                StringBuilder sbRowResult = new StringBuilder();
+                int mr_element = 0;
+                int totalRows = rows_m2.Count;
+                for (int i = 0; i < totalRows; i++)
+                {
+                    var m2_rowElements = rows_m2[i].row_Matrix.Split(',').Select(Int32.Parse).ToArray();
+                    for (int j = 0; j < m1_rowElements.Length; j++)
+                    {
+                        mr_element += m1_rowElements[j] * m2_rowElements[j];
+                    }
+                    sbRowResult.Append(mr_element);
+                    sbRowResult.Append(',');
+                }
+                sbRowResult.Length -= 1;
+                Client.server.AddResultRow(new RowResult(rowToMultiply.rowNumber,sbRowResult.ToString()), Client.clientName);
+            });
         }
 
 
@@ -151,35 +160,58 @@ namespace MatrixMultiplicationClient
             }
 
             int[] clientRows = Client.server.DispatchRowGroupsToClients(Client.clientName);
+
+            for (;;)
+            {
+                Thread.Sleep(1000);
+                if (Client.server.WaitForAllClientsToFinishDownload())
+                    break;
+            }
+
             //Esto ya esta, solo lo comento para probarlo
-            //if(clientRows != null)
-            //{
-            //    matrixResults = new string[p.rows_m1];
-            //    Task[] mTasks = new Task[clientRows.Length];
-            //    for (int i = 0; i < clientRows.Length; i++)
-            //    {
-            //        int aux_i = i;
-            //        mTasks[aux_i] = new Task(() => executeRowMultiplication(matrix1, matrix2, p.rows_m1, p.columns_m1, p.separator, clientRows[aux_i]));
-            //    }
+            if (clientRows != null)
+            {
+                matrixResults = new string[p.rows_m1];
+                Task[] mTasks = new Task[clientRows.Length];
+                for (int i = 0; i < clientRows.Length; i++)
+                {
+                    int aux_i = i;
+                    mTasks[aux_i] = new Task(() => executeRowMultiplication(matrix1, matrix2, p.rows_m1, p.columns_m1, p.separator, clientRows[aux_i]));
+                }
 
-            //    foreach (Task t in mTasks)
-            //        t.Start();
-            //}
+                foreach (Task t in mTasks)
+                    t.Start();
 
-            /*foreach (Task t in mTasks)
-                t.Start();
+                Task.WaitAll(mTasks);
+            }
 
-            Task.WaitAll(mTasks);
+            for (;;)
+            {
+                Thread.Sleep(1000);
+                if (Client.server.isResultMatrixComplete(Client.clientName))
+                    break;
+            }
+
+            for(;;)
+            {
+                RowResult rowResult = Client.server.downloadNextResultRow();
+                if (rowResult == null)
+                    break;
+                matrixResults[rowResult.rowNumber] = rowResult.rowResult;
+            }
 
 
-            RowResult[] sortedMatrix = MatrixResult.OrderBy(s => s.rowNumber).ToArray();
+            
+
+
+            //RowResult[] sortedMatrix = MatrixResult.OrderBy(s => s.rowNumber).ToArray();
             using (StreamWriter sw = File.CreateText(p.path_result))
             {
-                for (int i = 0; i < sortedMatrix.Length; i++)
+                for (int i = 0; i < matrixResults.Length; i++)
                 {
-                    sw.WriteLine(sortedMatrix[i].row);
+                    sw.WriteLine(matrixResults[i]);
                 }
-            }*/
+            }
             //stopwatch.Stop();
             //return stopwatch.ElapsedMilliseconds;
         }
@@ -207,6 +239,7 @@ namespace MatrixMultiplicationClient
             }
             sbRowResult.Length -= 1;
             matrixResults[rowIndex_m1] = sbRowResult.ToString();
+            Client.server.CompletedResultRowInSender(Client.clientName);
             //RowResult rowResult = new RowResult(rowIndex_m1,sbRowResult.ToString());
             //lock (syncLock)
             //{
