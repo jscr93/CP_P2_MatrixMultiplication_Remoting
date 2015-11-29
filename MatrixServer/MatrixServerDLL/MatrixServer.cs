@@ -19,7 +19,8 @@ namespace MatrixServerDLL
         private object                  callingClientsLock = new object();
         private bool                    callingClients = false;
         private Dictionary<string, int> downloadedRows_m2 = new Dictionary<string, int>();
-
+        private int                     uploading_m1    = 0;
+        private int                     uploading_m2    = 0;
 
         public void AddClient(String name)
         {
@@ -89,6 +90,7 @@ namespace MatrixServerDLL
             {
                 sourceMatrix_1.Add(newSourceRow);
             }
+            uploading_m1++;
             return true;
         }
 
@@ -100,6 +102,7 @@ namespace MatrixServerDLL
             {
                 sourceMatrix_2.Add(newSourceRow);
             }
+            uploading_m2++;
             return true;
         }
 
@@ -239,6 +242,8 @@ namespace MatrixServerDLL
         public ArrayList getDetails()
         {
             ArrayList details = new ArrayList();
+            details.Add(string.Format("Cargando matriz 1 a servidor {0}/{1}",uploading_m1, totalRows));
+            details.Add(string.Format("Cargando matriz 2 a servidor {0}/{1}",uploading_m2, totalRows));
             foreach (string client in clients)
             {
                 details.Add(string.Format("Cliente {0} decargando: Fila Matriz 1 num. {1}/{2} - Fila Matriz 2 num. {3}/{4}",
