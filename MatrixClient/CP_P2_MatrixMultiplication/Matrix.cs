@@ -136,6 +136,7 @@ namespace MatrixMultiplicationClient
 
             if (!Client.server.Start())
                 return;
+            startUpdateGUI();
             listeningCallingClientsThread.Abort();
             //Upload matrix to server
             for (int i = 0; i < p.rows_m1; i++)
@@ -149,7 +150,6 @@ namespace MatrixMultiplicationClient
             }
 
             int[] clientRows = Client.server.DispatchRowGroupsToClients(p.rows_m1, Client.clientName);
-            startUpdateGUI();
             //Esto ya esta, solo lo comento para probarlo
             //if(clientRows != null)
             //{
