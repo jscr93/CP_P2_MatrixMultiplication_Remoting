@@ -32,7 +32,8 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Label x:Name="lblIp" Content="IP del servidor:" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Right"/>
-            <TextBox x:Name="txtServerIp" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3"/>
+            <TextBox x:Name="txtServerIp" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"/>
+            <Button x:Name="btnConnect" Grid.Row="1" Grid.Column="3" Content="Conectar" Click="btnConnect_Click"/>
             
             <Label x:Name="lblRows" Content="Filas: " Grid.Row="3" Grid.Column="0" HorizontalAlignment="Right"/>
             <TextBox x:Name="txtRows" Grid.Row="3" Grid.Column="1" />

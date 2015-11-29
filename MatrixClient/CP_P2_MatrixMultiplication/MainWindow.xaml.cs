@@ -42,23 +42,9 @@ namespace MatrixMultiplicationClient
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            bool conectionSuccess = false;
-            while (!conectionSuccess)
-            {
-                try
-                {
-                    Client.Register(string.IsNullOrEmpty(txtServerIp.Text) ? "localhost" : txtServerIp.Text);
-                    conectionSuccess = true;
-                }
-                catch (Exception ex)
-                {
-                    MessageBoxResult mbr = MessageBox.Show("No se ha podido conectar al servidor. ¿Reintentar?", "Ha ocurrido un problema", MessageBoxButton.YesNo, MessageBoxImage.Hand);
-                    //if (mbr == MessageBoxResult.No)
-                        //return;
-                }
-            }
+            connectToServer();
 
-            Matrix.StartListening();
+
             path1 = @"C:\CP_P2\Matrix_1.txt";
             path2 = @"C:\CP_P2\Matrix_2.txt";
             path_result = @"C:\CP_P2\Matrix_Result.txt";
@@ -93,6 +79,27 @@ namespace MatrixMultiplicationClient
             }
         }
 
+        public void connectToServer()
+        {
+            bool conectionSuccess = false;
+            while (!conectionSuccess)
+            {
+                try
+                {
+                    Client.Register(string.IsNullOrEmpty(txtServerIp.Text) ? "localhost" : txtServerIp.Text);
+                    conectionSuccess = true;
+                    Matrix.StartListening();
+                }
+                catch (Exception ex)
+                {
+                    MessageBoxResult mbr = MessageBox.Show("No se ha podido conectar al servidor. ¿Reintentar?", "Ha ocurrido un problema", MessageBoxButton.YesNo, MessageBoxImage.Hand);
+                    if (mbr == MessageBoxResult.No)
+                        break;
+                    //return;
+                }
+            }
+        }
+
         private void btnNewMatrices_Click(object sender, RoutedEventArgs e)
         {
             int rows, columns, seed1, seed2;
@@ -124,6 +131,11 @@ namespace MatrixMultiplicationClient
             {
                 MessageBox.Show("Los valores ingresados deben ser enteros", "No se ha podido realizar la operación", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
+        }
+
+        private void btnConnect_Click(object sender, RoutedEventArgs e)
+        {
+            connectToServer();
         }
 
         private void btnParallel_Click(object sender, RoutedEventArgs e)
