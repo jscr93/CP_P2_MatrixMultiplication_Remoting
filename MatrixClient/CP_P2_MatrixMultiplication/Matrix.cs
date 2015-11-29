@@ -100,10 +100,11 @@ namespace MatrixMultiplicationClient
             {
                 var m1_rowElements = rowToMultiply.row_Matrix.Split(',').Select(Int32.Parse).ToArray();
                 StringBuilder sbRowResult = new StringBuilder();
-                int mr_element = 0;
+                
                 int totalRows = rows_m2.Count;
                 for (int i = 0; i < totalRows; i++)
                 {
+                    int mr_element = 0;
                     var m2_rowElements = rows_m2[i].row_Matrix.Split(',').Select(Int32.Parse).ToArray();
                     for (int j = 0; j < m1_rowElements.Length; j++)
                     {
