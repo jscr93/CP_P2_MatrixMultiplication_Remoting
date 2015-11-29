@@ -251,7 +251,7 @@ namespace MatrixServerDLL
         public RowsToMultiply getSourceRow_m2(int rowNumber)
         {
             if (rowNumber < totalRows)
-                return sourceMatrix_1.Where(m => m.rowNumber == rowNumber).First();
+                return sourceMatrix_2.Where(m => m.rowNumber == rowNumber).First();
             return null;
         }
 
